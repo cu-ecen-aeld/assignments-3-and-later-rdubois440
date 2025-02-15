@@ -1,4 +1,8 @@
+#include "stdlib.h"
 #include "systemcalls.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,6 +20,9 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+	int	retval = system(cmd);
+	if (retval == -1)
+		return false;
 
     return true;
 }
@@ -40,14 +47,17 @@ bool do_exec(int count, ...)
     va_start(args, count);
     char * command[count+1];
     int i;
+	printf("Command is : ");
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
+		printf("%s ", command[i]);
     }
+	printf("\n");
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
 
 /*
  * TODO:
@@ -58,6 +68,43 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+	//printf("\n%s \n%s \n%s\n\n", command[0], command[1], command[2]);
+
+    pid_t pid = fork();
+
+    if (pid == 0) {
+    	printf("Child process: PID=%d\n", getpid());
+
+    char *envp[] =
+    { 
+		0
+	};
+
+		int retval = execve(command[0], command, envp);
+
+		/*printf("Before unset HOME is %s\n", getenv("HOME"));
+		setenv("HOME", "", 1);
+		printf("After unset HOME is %s\n", getenv("HOME"));
+		int retval = execv(command[0], command);*/
+
+		if (retval == -1)
+    		printf("Something went wrong\n");
+			return false;
+
+  }
+  else if(pid > 0) {
+    printf("Parent process: PID=%d\n", getpid());
+	int status;
+    waitpid(pid, &status, 0);
+	printf("Returned status from child %d\n", status);
+	if (status != 0)
+		return false;
+  }
+  else {
+    printf("Fork failed!\n");
+    return false;
+  }
+
 
     va_end(args);
 
@@ -75,10 +122,15 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     va_start(args, count);
     char * command[count+1];
     int i;
+
+	printf("Output file is %s\n", outputfile);
+	printf("Command is : ");
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
+		printf("%s ", command[i]);
     }
+	printf("\n");
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
@@ -92,6 +144,53 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+
+ 	int fd = open("outputfile", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+
+    if (fd < 0) {
+        printf("Error creating output file %s\n", outputfile);
+        return false;
+    }
+
+    pid_t pid = fork();
+
+    if (pid == 0) {
+    	printf("Child process: PID=%d\n", getpid());
+       	dup2(fd, STDOUT_FILENO);
+        close(fd);
+
+
+		/*printf("Before unset HOME is %s\n", getenv("HOME"));
+		setenv("HOME", "", 1);
+		printf("After unset HOME is %s\n", getenv("HOME"));*/
+
+
+    	/*char *envp[] =
+    	{ 
+			0
+		};*/
+
+		int retval = execv(command[0], command);
+
+
+		if (retval == -1)
+    		printf("Something went wrong\n");
+			return false;
+
+  }
+  else if(pid > 0) {
+    printf("Parent process: PID=%d\n", getpid());
+	int status;
+    waitpid(pid, &status, 0);
+	printf("Returned status from child %d\n", status);
+	if (status != 0)
+		return false;
+  }
+  else {
+    printf("Fork failed!\n");
+    return false;
+  }
+
 
     va_end(args);
 
