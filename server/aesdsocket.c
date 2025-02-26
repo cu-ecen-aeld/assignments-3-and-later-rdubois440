@@ -227,7 +227,9 @@ int main(int argc , char *argv[])
 	fclose(fptr);
 
 	//Create socket
+	int option = 1;
 	socket_desc = socket(AF_INET , SOCK_STREAM , 0);
+	setsockopt(socket_desc, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 	if (socket_desc == -1)
 	{
 		printf("Could not create socket");
@@ -317,7 +319,7 @@ int main(int argc , char *argv[])
 
 
 			// Write some text to the file
-			int retval = fprintf(fptr, client_message); 
+			int retval = fputs(client_message, fptr); 
 			syslog(LOG_DEBUG, "client_message length is %ld\n", strlen(client_message));
 			printf("fprintf returns %d\n", retval);
 			syslog(LOG_DEBUG, "fprintf returns %d\n", retval);
