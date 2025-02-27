@@ -6,7 +6,7 @@ default : aesdsocket
 
 
 aesdsocket : aesdsocket.c
-	$(CC) -o aesdsocket aesdsocket.c -Wall -Werror -Wno-use-after-fre
+	$(CC) -o aesdsocket aesdsocket.c -Wall -Werror -Wno-use-after-free
 
 clean :
 	rm -f aesdsocket
